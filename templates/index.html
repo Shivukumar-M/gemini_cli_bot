@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .message-animation {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+            <h1 class="text-2xl font-bold mb-1">Gemini AI Chat built by Shivu</h1>
+            <p class="text-blue-100 text-sm">Have a conversation with Google's Gemini AI assistant</p>
+        </div>
+    </header>
+
+    <!-- Main Chat Container -->
+    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-4">
+        <!-- Messages Container -->
+        <div class="flex-1 bg-gray-300 rounded-lg shadow-md border border-gray-200 mb-4 flex flex-col">
+            <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Empty State -->
+                <div id="empty-state" class="text-center py-12">
+                    <div class="text-gray-400 mb-4">
+                        <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Welcome to Gemini Chat</h3>
+                    <p class="text-gray-500">Start a conversation by typing your message below</p>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden px-4 py-2 border-t border-gray-100">
+                <div class="flex items-center text-gray-500 text-sm">
+                    <div class="w-4 h-4 mr-2">
+                        <svg class="animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <span class="loading-dots">Gemini is thinking</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Container -->
+        <div class="bg-gray-300 rounded-lg shadow-md border border-gray-200 p-4">
+            <form id="chat-form" class="flex flex-col sm:flex-row gap-3">
+                <div class="flex-1">
+                    <textarea 
+                        id="message-input"
+                        placeholder="Type your message here..."
+                        rows="1"
+                        class="w-full p-3 border bg-slate-100 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200"
+                    ></textarea>
+                </div>
+                <div class="flex gap-2 sm:flex-col">
+                    <button 
+                        type="submit" 
+                        id="send-btn"
+                        class="flex-1 sm:flex-none bg-blue-700 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Send
+                    </button>
+                    <button 
+                        type="button" 
+                        id="clear-btn"
+                        class="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+                    >
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const chatForm = document.getElementById('chat-form');
+        const sendBtn = document.getElementById('send-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const loading = document.getElementById('loading');
+        const emptyState = document.getElementById('empty-state');
+        
+        // Session management
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        let hasMessages = false;
+
+        // Auto-resize textarea
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        messageInput.addEventListener('input', function() {
+            autoResize(this);
+        });
+
+        // Handle Enter key submission
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+            }
+        });
+
+        // Form submission
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleSubmit();
+        });
+
+        // Clear chat
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear the conversation?')) {
+                clearChat();
+            }
+        });
+
+        // Handle form submission
+        async function handleSubmit() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Hide empty state on first message
+            if (!hasMessages) {
+                emptyState.style.display = 'none';
+                hasMessages = true;
+            }
+
+            // Add user message
+            addMessage(message, 'user');
+            
+            // Reset input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Show loading
+            setLoading(true);
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Clear chat function
+        async function clearChat() {
+            try {
+                const response = await fetch('/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Clear messages and show empty state
+                    const messageElements = messagesContainer.querySelectorAll('.message');
+                    messageElements.forEach(el => el.remove());
+                    
+                    emptyState.style.display = 'block';
+                    hasMessages = false;
+                } else {
+                    showError(data.error || 'Failed to clear conversation');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        // Add message to chat
+        function addMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-animation ${sender === 'user' ? 'flex justify-end' : 'flex justify-start'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                sender === 'user' 
+                    ? 'bg-blue-600 text-white rounded-br-none' 
+                    : 'bg-gray-100 text-gray-800 rounded-bl-none'
+            }`;
+            
+            messageContent.innerHTML = formatMessage(content);
+            messageDiv.appendChild(messageContent);
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Format message content
+        function formatMessage(content) {
+            return content
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+
+        // Show/hide loading state
+        function setLoading(show) {
+            if (show) {
+                loading.classList.remove('hidden');
+            } else {
+                loading.classList.add('hidden');
+            }
+            
+            sendBtn.disabled = show;
+            messageInput.disabled = show;
+            
+            if (show) {
+                scrollToBottom();
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message message-animation flex justify-center';
+            errorDiv.innerHTML = `
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg max-w-md">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-sm">${message}</span>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(errorDiv);
+            scrollToBottom();
+            
+            // Auto-remove error after 5 seconds
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Scroll to bottom of messages
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Focus on input when page loads
+        window.addEventListener('load', function() {
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>
