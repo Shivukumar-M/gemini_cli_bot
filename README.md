@@ -1,112 +1,111 @@
-# Gemini CLI Chatbot
+# Gemini AI Web Chatbot
 
-A simple, interactive command-line interface (CLI) chatbot powered by Google's Gemini API. This application allows you to chat directly with a Gemini model, maintaining conversational context throughout your session.
+A simple, interactive **web-based chatbot** powered by **Google's Gemini
+API**, built using **Python (Flask)** and a modern **Tailwind CSS**
+frontend.\
+This application provides a **clean, responsive UI** for natural
+conversations with the Gemini model.
+
+------------------------------------------------------------------------
 
 ## ✨ Features
 
-*   **Interactive Chat:** Engage in a turn-by-turn conversation with the Gemini model.
-*   **Conversational Memory:** The chatbot remembers previous turns in the conversation, allowing for more natural and context-aware interactions.
-*   **API Key Management:** Securely loads your Gemini API key from a `config.json` file.
-*   **Robust Error Handling:** Includes checks for missing configuration files, malformed JSON, missing API keys, and issues during API calls (e.g., network errors, content safety blocks).
-*   **Graceful Exit:** Easily quit the chat by typing 'exit', 'quit', or 'q'.
+-   **Responsive Web Interface** → Works seamlessly on desktop & mobile
+    devices.\
+-   **Conversational Memory** → Maintains context across the chat
+    session.\
+-   **Secure API Key Management** → Loads Gemini API key from
+    `config.json` (not exposed in code).\
+-   **Dynamic UI** → Loading indicator + smooth animations for new
+    messages.\
+-   **Error Handling** → User-friendly error messages for network/API
+    failures.\
+-   **Clear Chat** → Reset button to clear chat history instantly.
+
+------------------------------------------------------------------------
 
 ## 🚀 Getting Started
 
-Follow these steps to set up and run the Gemini CLI Chatbot on your local machine.
+Follow these steps to set up and run the chatbot locally.
 
-### Prerequisites
+### ✅ Prerequisites
 
-Before you begin, ensure you have the following installed:
+-   [Python 3.x](https://www.python.org/downloads/)\
+-   [Google Gemini API Key](https://aistudio.google.com/)
 
-*   **Python 3.x:** Download from [python.org](https://www.python.org/downloads/).
-*   **Google Gemini API Key:** You'll need an API key to access the Gemini models.
+------------------------------------------------------------------------
 
-### Installation
+### ⚙️ Installation
 
-1.  **Clone or Download the Repository:**
-    If you're using Git:
-    ```bash
-    git clone <repository_url>
-    cd <repository_name>
+1.  **Clone / Download the Project**\
+    Download the files (`app.py`, `index.html`, `config.json`,
+    `README.md`) into a single folder.
+
+2.  **Install Dependencies**
+
+    ``` bash
+    pip install Flask google-generativeai
     ```
-    (Replace `<repository_url>` and `<repository_name>` with your actual GitHub repository details once it's set up.)
 
-    Alternatively, download the `chatbot.py` file directly.
-
-2.  **Install Required Libraries:**
-    Open your terminal or command prompt and run:
-    ```bash
-    pip install google-generativeai
-    ```
+------------------------------------------------------------------------
 
 ### 🔑 API Key Configuration
 
-**IMPORTANT: Never commit your API keys directly into your code or public repositories!**
+⚠️ **Never commit your API keys to GitHub or public repos!**
 
-1.  **Generate a Gemini API Key:**
-    *   Go to the [Google AI Studio](https://aistudio.google.com/app/apikey) website.
-    *   Sign in with your Google account.
-    *   Click "Get API key" or "Create API key in new project."
-    *   Copy the generated API key.
+1.  **Get API Key**
 
-2.  **Create `config.json`:**
-    In the **same directory** where you saved `chatbot.py`, create a new file named `config.json`.
-    Open `config.json` with a text editor and add the following content, replacing `"YOUR_ACTUAL_GEMINI_API_KEY"` with the key you generated:
+    -   Go to [Google AI Studio](https://aistudio.google.com/).\
+    -   Sign in → Click **Get API Key** → Copy the generated key.
 
-    ```json
+2.  **Update `config.json`**\
+    Replace the placeholder with your actual API key:
+
+    ``` json
     {
       "GEMINI_API_KEY": "YOUR_ACTUAL_GEMINI_API_KEY"
     }
     ```
 
-## 🎮 Usage
+------------------------------------------------------------------------
 
-1.  **Run the Chatbot:**
-    Open your terminal or command prompt, navigate to the directory where you saved `chatbot.py` and `config.json`, and run:
-    ```bash
-    python chatbot.py
+### 🎮 Usage
+
+1.  **Run the Flask app**
+
+    ``` bash
+    python app.py
     ```
 
-2.  **Start Chatting:**
-    The chatbot will greet you, and you can start typing your questions or prompts after the "You:" prompt.
+    You should see:
 
-    ```
-    Welcome to Gemini Chat!
-    Type 'exit', 'quit', or 'q' to end the conversation.
-    ----------------------------------------
-    You: Hello, how are you?
-    Gemini: I am an AI, so I don't have feelings, but I'm ready to help you! How can I assist you today?
-    You: What is the capital of France?
-    Gemini: The capital of France is Paris.
-    You: And what about Germany?
-    Gemini: The capital of Germany is Berlin.
-    You: quit
-    Gemini: Goodbye! It was nice chatting with you.
-    ```
+        * Running on http://127.0.0.1:5000
 
-3.  **Exit the Chat:**
-    To end the conversation, type `exit`, `quit`, or `q` at any `You:` prompt and press Enter.
+2.  **Open in Browser**\
+    Go to → <http://127.0.0.1:5000>
 
-## ⚠️ Error Handling
+3.  **Start Chatting**
 
-The script includes basic error handling for:
-*   Missing `config.json` file.
-*   Invalid JSON syntax in `config.json`.
-*   Missing `GEMINI_API_KEY` within `config.json`.
-*   General API call issues (e.g., network problems).
-*   Prompts that are blocked by Gemini's content safety policies.
+    -   Type your message → Press **Enter** or click **Send**\
+    -   Click **Clear** to reset the chat
 
-If an error occurs, the script will usually print an informative message.
+------------------------------------------------------------------------
 
-## 💡 Enhancements & Future Improvements
+## 📁 Project Structure
 
-*   **More Advanced Error Handling:** Implement specific handling for different API error codes.
-*   **Prompt Engineering:** Add system instructions or initial prompts to guide the chatbot's persona or behavior.
-*   **Logging:** Implement logging to save conversation history or debug information.
-*   **Configuration Options:** Allow model name, temperature, or other parameters to be set via command-line arguments or a more elaborate config file.
-*   **User Interface:** Convert to a GUI application (e.g., using Tkinter, PyQt, Streamlit).
-*   **Multimodal Support:** Integrate vision capabilities if using a `gemini-pro-vision` type model.
+    📂 Gemini-Web-Chatbot
+     ├── app.py        # Flask backend (routes, API requests, chat session handling)
+     ├── index.html    # Frontend (Tailwind + JS for dynamic chat UI)
+     ├── config.json   # Stores Gemini API Key securely
+     └── README.md     # Project documentation
 
-## 📄 License
+------------------------------------------------------------------------
 
-This project is open-source and available under the MIT License. See the [LICENSE](LICENSE) file for more details. (You'd create a separate LICENSE file if you want to include a formal license).
+## 💡 Enhancements (Future Improvements)
+
+-   🔐 **User Authentication** → Maintain chat history per user.\
+-   💾 **Persistent Storage** → Save chats in SQLite/Postgres/MongoDB.\
+-   📝 **Markdown Rendering** → Rich formatting (lists, tables, code
+    blocks).\
+-   ☁️ **Deployment** → Host on **Heroku, Vercel, or AWS** for
+    production.
