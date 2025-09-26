@@ -44,19 +44,52 @@
             40% { content: '..'; }
             60%, 100% { content: '...'; }
         }
+        .file-indicator {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .files-panel {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .files-panel.open {
+            transform: translateX(0);
+        }
+        .overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col">
     <!-- Header -->
     <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
-        <div class="max-w-4xl mx-auto px-4 py-6">
-            <h1 class="text-2xl font-bold mb-1">Gemini AI Chat built by Shivu</h1>
-            <p class="text-blue-100 text-sm">Have a conversation with Google's Gemini AI assistant</p>
+        <div class="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold mb-1">Gemini AI Chat built by Shivu</h1>
+                <p class="text-blue-100 text-sm">Have a conversation with Google's Gemini AI assistant</p>
+            </div>
+            <button id="files-toggle" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span class="text-sm font-medium">Files</span>
+                <span id="files-count" class="bg-green-500 text-white text-xs px-2 py-1 rounded-full hidden">0</span>
+            </button>
         </div>
     </header>
 
     <!-- Main Chat Container -->
-    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-4">
+    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-4 relative">
         <!-- Messages Container -->
         <div class="flex-1 bg-gray-300 rounded-lg shadow-md border border-gray-200 mb-4 flex flex-col">
             <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4">
@@ -68,7 +101,15 @@
                         </svg>
                     </div>
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Welcome to Gemini Chat</h3>
-                    <p class="text-gray-500">Start a conversation by typing your message below</p>
+                    <p class="text-gray-500 mb-4">Start a conversation by typing your message below</p>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+                        <h4 class="font-semibold text-blue-800 mb-2">💡 Try creating files:</h4>
+                        <ul class="text-sm text-blue-700 text-left space-y-1">
+                            <li>• "Create a Python calculator script"</li>
+                            <li>• "Make an HTML page for my portfolio"</li>
+                            <li>• "Generate a JavaScript function"</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -92,7 +133,7 @@
                 <div class="flex-1">
                     <textarea 
                         id="message-input"
-                        placeholder="Type your message here..."
+                        placeholder="Type your message here... (try asking me to create files!)"
                         rows="1"
                         class="w-full p-3 border bg-slate-100 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200"
                     ></textarea>
@@ -117,6 +158,49 @@
         </div>
     </div>
 
+    <!-- Files Panel Overlay -->
+    <div id="files-overlay" class="overlay fixed inset-0 bg-black/50 z-40"></div>
+
+    <!-- Files Panel -->
+    <div id="files-panel" class="files-panel fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 flex flex-col">
+        <!-- Files Header -->
+        <div class="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-bold">Generated Files</h2>
+                <p class="text-green-100 text-sm">Files created in this session</p>
+            </div>
+            <button id="close-files" class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Files List -->
+        <div class="flex-1 overflow-y-auto p-4">
+            <div class="space-y-2" id="files-list">
+                <!-- Files will be populated here -->
+            </div>
+            <div id="no-files" class="text-center py-8 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <p class="text-sm">No files created yet</p>
+                <p class="text-xs text-gray-400 mt-1">Ask me to create files in the chat!</p>
+            </div>
+        </div>
+
+        <!-- Refresh Files Button -->
+        <div class="p-4 border-t">
+            <button id="refresh-files" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Refresh Files
+            </button>
+        </div>
+    </div>
+
     <script>
         // DOM Elements
         const messagesContainer = document.getElementById('messages');
@@ -126,10 +210,100 @@
         const clearBtn = document.getElementById('clear-btn');
         const loading = document.getElementById('loading');
         const emptyState = document.getElementById('empty-state');
+        const filesToggle = document.getElementById('files-toggle');
+        const filesPanel = document.getElementById('files-panel');
+        const filesOverlay = document.getElementById('files-overlay');
+        const closeFiles = document.getElementById('close-files');
+        const filesList = document.getElementById('files-list');
+        const noFiles = document.getElementById('no-files');
+        const refreshFiles = document.getElementById('refresh-files');
+        const filesCount = document.getElementById('files-count');
         
         // Session management
         const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         let hasMessages = false;
+
+        // Files panel management
+        filesToggle.addEventListener('click', openFilesPanel);
+        closeFiles.addEventListener('click', closeFilesPanel);
+        filesOverlay.addEventListener('click', closeFilesPanel);
+        refreshFiles.addEventListener('click', loadFiles);
+
+        function openFilesPanel() {
+            filesPanel.classList.add('open');
+            filesOverlay.classList.add('active');
+            loadFiles();
+        }
+
+        function closeFilesPanel() {
+            filesPanel.classList.remove('open');
+            filesOverlay.classList.remove('active');
+        }
+
+        // Load files from server
+        async function loadFiles() {
+            try {
+                const response = await fetch('/files');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayFiles(data.files);
+                    updateFilesCount(data.files.length);
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+            }
+        }
+
+        function displayFiles(files) {
+            filesList.innerHTML = '';
+            
+            if (files.length === 0) {
+                noFiles.style.display = 'block';
+            } else {
+                noFiles.style.display = 'none';
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'bg-gray-50 border border-gray-200 rounded-lg p-3 hover:bg-gray-100 transition-colors duration-200';
+                    
+                    fileItem.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">${file.name}</h4>
+                                <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                            </div>
+                            <button onclick="downloadFile('${file.name}')" class="ml-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs transition-colors duration-200">
+                                Download
+                            </button>
+                        </div>
+                    `;
+                    
+                    filesList.appendChild(fileItem);
+                });
+            }
+        }
+
+        function updateFilesCount(count) {
+            if (count > 0) {
+                filesCount.textContent = count;
+                filesCount.classList.remove('hidden');
+            } else {
+                filesCount.classList.add('hidden');
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function downloadFile(filename) {
+            window.open(`/download/${filename}`, '_blank');
+        }
 
         // Auto-resize textarea
         function autoResize(textarea) {
@@ -198,7 +372,14 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    addMessage(data.response, 'bot');
+                    addMessage(data.response, 'bot', data.file_created, data.file_info);
+                    
+                    // If file was created, update files count
+                    if (data.file_created) {
+                        setTimeout(() => {
+                            loadFiles();
+                        }, 500);
+                    }
                 } else {
                     showError(data.error || 'An error occurred');
                 }
@@ -240,7 +421,7 @@
         }
 
         // Add message to chat
-        function addMessage(content, sender) {
+        function addMessage(content, sender, fileCreated = false, fileInfo = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message message-animation ${sender === 'user' ? 'flex justify-end' : 'flex justify-start'}`;
             
@@ -252,8 +433,26 @@
             }`;
             
             messageContent.innerHTML = formatMessage(content);
-            messageDiv.appendChild(messageContent);
             
+            // Add file creation indicator
+            if (fileCreated && fileInfo) {
+                const fileIndicator = document.createElement('div');
+                fileIndicator.className = 'file-indicator text-white px-3 py-2 mt-2 rounded-lg text-sm';
+                fileIndicator.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>📄 File created: <strong>${fileInfo.filename}</strong></span>
+                    </div>
+                    <div class="text-xs mt-1 opacity-90">
+                        Size: ${formatFileSize(fileInfo.size)} • <a href="/download/${fileInfo.filename}" target="_blank" class="underline">Download</a>
+                    </div>
+                `;
+                messageContent.appendChild(fileIndicator);
+            }
+            
+            messageDiv.appendChild(messageContent);
             messagesContainer.appendChild(messageDiv);
             scrollToBottom();
         }
@@ -314,6 +513,14 @@
         // Focus on input when page loads
         window.addEventListener('load', function() {
             messageInput.focus();
+            loadFiles(); // Load files on page load
+        });
+
+        // Close files panel on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && filesPanel.classList.contains('open')) {
+                closeFilesPanel();
+            }
         });
     </script>
 </body>
